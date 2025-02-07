@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindMirror - 行为动机分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: block;
+        }
+        .relation-group {
+            margin-bottom: 0.5rem;
+        }
+        .relation-group-title {
+            font-weight: bold;
+            color: #4a5568;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">MindMirror</h1>
+            <p class="text-gray-600">深入理解人际行为背后的动机</p>
+        </header>
+
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+            <div class="mb-6">
+                <label for="behavior" class="block text-gray-700 text-sm font-bold mb-2">行为描述</label>
+                <textarea id="behavior" rows="4" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline" placeholder="描述你想要理解的行为..."></textarea>
+            </div>
+
+            <div class="mb-6">
+                <label for="relation-type" class="block text-gray-700 text-sm font-bold mb-2">关系类型</label>
+                <select id="relation-type" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline">
+                    <optgroup label="家庭关系">
+                        <option value="家人">家人</option>
+                        <option value="伴侣">伴侣</option>
+                    </optgroup>
+                    <optgroup label="社交关系">
+                        <option value="朋友">朋友</option>
+                        <option value="普通认识">普通认识</option>
+                    </optgroup>
+                    <optgroup label="职场关系">
+                        <option value="上司">上司</option>
+                        <option value="平级同事">平级同事</option>
+                        <option value="下属">下属</option>
+                        <option value="客户">客户</option>
+                        <option value="上游供应商">上游供应商</option>
+                    </optgroup>
+                    <optgroup label="社会关系">
+                        <option value="贵人">贵人</option>
+                        <option value="靠山">靠山</option>
+                        <option value="依附对象">依附对象</option>
+                        <option value="权势之人">权势之人</option>
+                    </optgroup>
+                    <optgroup label="其他">
+                        <option value="其他">其他</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label for="context" class="block text-gray-700 text-sm font-bold mb-2">情境背景 (可选)</label>
+                <textarea id="context" rows="2" class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline" placeholder="补充相关的背景信息..."></textarea>
+            </div>
+
+            <button id="analyze" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline">
+                分析行为动机
+            </button>
+
+            <div id="loading" class="loading text-center my-4">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <p class="text-gray-600 mt-2">正在分析中...</p>
+            </div>
+
+            <div id="result" class="mt-8 hidden">
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">思维链分析</h3>
+                    <div id="reasoning" class="bg-gray-50 rounded-lg p-4 text-gray-700"></div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">潜在动机</h3>
+                    <div id="motivation" class="bg-gray-50 rounded-lg p-4 text-gray-700"></div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">互动建议</h3>
+                    <ul id="suggestions" class="list-disc list-inside bg-gray-50 rounded-lg p-4 text-gray-700"></ul>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">心理洞察</h3>
+                    <div id="insights" class="bg-gray-50 rounded-lg p-4 text-gray-700"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('analyze').addEventListener('click', async () => {
+            const behavior = document.getElementById('behavior').value;
+            const relationType = document.getElementById('relation-type').value;
+            const context = document.getElementById('context').value;
+            
+            if (!behavior.trim()) {
+                alert('请输入行为描述');
+                return;
+            }
+
+            if (!relationType) {
+                alert('请选择关系类型');
+                return;
+            }
+
+            // 显示加载动画
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('result').classList.add('hidden');
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        behavior_description: behavior,
+                        relation_type: relationType,
+                        context: context
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // 显示结果
+                document.getElementById('reasoning').textContent = data.reasoning_chain || '分析过程未提供';
+                document.getElementById('motivation').textContent = data.motivation || '动机分析未提供';
+                
+                // 确保suggestions是数组
+                const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+                document.getElementById('suggestions').innerHTML = suggestions
+                    .map(s => `<li>${s}</li>`)
+                    .join('') || '<li>暂无具体建议</li>';
+                
+                document.getElementById('insights').textContent = data.psychological_insights || '心理洞察未提供';
+                
+                document.getElementById('result').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('分析过程中出现错误：' + error.message);
+                
+                // 显示错误信息在界面上
+                document.getElementById('result').classList.remove('hidden');
+                document.getElementById('reasoning').textContent = '分析过程出现错误';
+                document.getElementById('motivation').textContent = '无法获取分析结果';
+                document.getElementById('suggestions').innerHTML = '<li>请稍后重试</li>';
+                document.getElementById('insights').textContent = '暂时无法提供心理洞察';
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html> 
